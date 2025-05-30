@@ -101,6 +101,20 @@ We also provide the evaluation codes for InternVL2.5. -->
 
 If you find our VAU-R1 useful in your research, please consider cite our work or star our repo.
 
+```tex
+@misc{zhu2025vaur1,
+      title={VAU-R1: Advancing Video Anomaly Understanding via Reinforcement Fine-Tuning}, 
+      author={Liyun Zhu and Qixiang Chen and Xi Shen and Xiaodong Cun},
+      year={2025},
+      eprint={2505.23504},
+      archivePrefix={arXiv},
+      primaryClass={cs.CV},
+      url={https://arxiv.org/abs/2505.23504}, 
+}
+```
+
+
+
 ## Acknowledgement 
 
 This codebase is built on top of [VideoChat-R1](https://github.com/OpenGVLab/VideoChat-R1), and we thank the authors for their work.
