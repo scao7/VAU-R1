@@ -9,7 +9,7 @@
   <sup>2</sup><a href='https://gvclab.github.io'>GVC Lab, Great Bay University</a> &nbsp&nbsp&nbsp&nbsp
   <sup>3</sup>Intellindust
   <br>
-  &nbsp&nbsp 🌐 <a> Project Website (coming soon)</a> ｜ 📑 <a href="https://arxiv.org/">Paper</a> &nbsp&nbsp
+  &nbsp&nbsp 🌐 <a> Project Website (coming soon)</a> ｜ 📑 <a href="https://arxiv.org/abs/2505.23504">Paper</a> &nbsp&nbsp
   <br>
   <img src="./assets/pipeline.png" width="600"/>
 </p>
