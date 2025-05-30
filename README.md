@@ -45,16 +45,16 @@ Please download the original video files from [UCF-Crime](https://www.crcv.ucf.e
 
 ## Training
 
-We use ``training_scripts/run_grpo_video_qa.sh`` for training the RFT for Multi-choice QA task.
+We use ``scripts/training/run_grpo_video_qa.sh`` for training the RFT for Multi-choice QA task.
 
 ````shell
-sh training_scripts/run_grpo_video_qa.sh
+sh scripts/training/run_grpo_video_qa.sh
 ````
 
-We use ``training_scripts/run_grpo_video_tag.sh`` for training the RFT for temporal anomaly grouding task.
+We use ``scripts/training/run_grpo_video_tag.sh`` for training the RFT for temporal anomaly grouding task.
 
 ````shell
-sh training_scripts/run_grpo_video_tag.sh
+sh scripts/training/run_grpo_video_tag.sh
 ````
 
 
