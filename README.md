@@ -6,7 +6,7 @@
   <a href="https://vinthony.github.io/academic/">Xiaodong Cun</a><sup>2</sup>
   <br>
   <sup>1</sup>Australian National University &nbsp&nbsp&nbsp&nbsp
-  <sup>2</sup>GVC Lab, Great Bay University &nbsp&nbsp&nbsp&nbsp
+  <sup>2</sup><a href='https://gvclab.github.io'>GVC Lab, Great Bay University</a> &nbsp&nbsp&nbsp&nbsp
   <sup>3</sup>Intellindust
   <br>
   &nbsp&nbsp 🌐 <a> Project Website (coming soon)</a> ｜ 📑 <a href="https://arxiv.org/">Paper</a> &nbsp&nbsp
