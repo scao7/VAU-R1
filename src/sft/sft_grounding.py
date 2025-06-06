@@ -126,16 +126,14 @@ dataset_path_dict = {
     }
 
 
-FIXED_QUESTION = "Is there any anomaly in the video? If yes, please answer 'Anomaly' and present the precise anomaly time period. If no, please answer 'Normal' and output time period as <glue>[-1.0, -1.0]</glue>."
+FIXED_QUESTION = "Is there any anomaly in the video? If yes, output time period as <glue>[start_time, end_time]</glue>, replace start_time and end_time with the actual time period in seconds. If no anomaly, output <glue>[-1.0, -1.0]</glue>."
 
 
-QUESTION_TEMPLATE = """Answer the question: "[QUESTION]" according to the content of the video. Select the answer from :[OPTION].
+QUESTION_TEMPLATE = """Answer the question: "[QUESTION]" according to the content of the video.
 
-Output your thought process within the <think> </think> tags with detailed analysis.
+Provide your answer within the <glue> </glue> tags, present the precise time period in seconds of the video clips on which you base your answer to this question in the format of [s1, e1]. 
 
-Then, provide your answer within the <answer> </answer> tags, output the corresponding option. At the same time, in the <glue> </glue> tags, present the precise time period in seconds of the video clips on which you base your answer to this question in the format of [s1, e1]. 
-
-For example: <think> your detailed reasoning process here </think><answer> your final answer here </answer><glue>[5.2, 10.4]</glue>.
+For example: <glue>[5.2, 10.4]</glue>.
 """
 
 
@@ -210,23 +208,6 @@ def load_csv_dataset(train_data_path, eval_data_path, video_folder, preprocessed
 processor = None
 
 
-# QUESTION_TEMPLATE = (
-#     "You are an advanced anomaly detection assistant assigned to analyze videos through a structured conversation. "
-#     "Carefully examine the video and decide whether it contains anomaly — an unusual, unexpected, or irregular event that stands out from the surrounding content. "
-#     "You should first carefully reason through the problem internally, and then present the final answer. "
-#     "Your reasoning process must be enclosed within <think> </think> tags, and your final answer must be enclosed within <answer> </answer> tags. "
-#     "In the <glue> </glue> tags, present the precise time period in seconds of the anomaly in the format of [s1, e1]. For example: <answer>Abnormal</answer><glue>[5.2, 10.4]</glue>. "
-#     "If no anomaly is present, respond with <answer>Normal</answer><glue>[-1.0, -1.0]</glue>. "
-#     "The expected format is: <think> your detailed reasoning process here </think><answer> your final answer here </answer><glue> time period here </glue>. "
-#     "Ensure that both the reasoning and the answer are clear, coherent, and well-structured."
-#     "Be as accurate as possible; approximate times are acceptable if exact boundaries are unclear."
-# )
-
-# """To accurately pinpoint the event "[EVENT]" in the video, determine the precise time period of the event.
-
-# Provide the start and end times (in seconds, precise to two decimal places) in the format "start time to end time" within the <answer> </answer> tags. For example: "12.54 to 17.83"."""
-
-
 def convert_example(example):
     messages = []
     example_prompt = QUESTION_TEMPLATE.replace("[QUESTION]", example["problem"]["question"])
@@ -244,7 +225,7 @@ def convert_example(example):
     })
 
     st, ed = example["solution"]["glue"]
-    answer_text = f"""<think>{example["reasoning"]}</think><answer>{example["solution"]["answer"]}</answer><glue>[{round(st,1)}, {round(ed,1)}]</glue>."""
+    answer_text = f"""<glue>[{round(st,1)}, {round(ed,1)}]</glue>."""
 
     messages.append({
         "role": "assistant",
@@ -439,7 +420,7 @@ def main(script_args, training_args, model_args):
     # Save everything else on main process
     kwargs = {
         "dataset_name": script_args.dataset_name,
-        "tags": ["VAD-R1"],
+        "tags": ["VAU-R1"],
     }
     if trainer.accelerator.is_main_process:
         trainer.create_model_card(**kwargs)

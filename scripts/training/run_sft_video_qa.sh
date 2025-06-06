@@ -10,24 +10,23 @@ OUTDIR=./checkpoints/$WANDB_NAME
 
 export DEBUG_MODE="true"
 export LOG_PATH="./logs/${WANDB_NAME}.log"
-
 export TOKENIZERS_PARALLELISM=false
 
 torchrun \
-    --nproc_per_node=3 \
+    --nproc_per_node=1 \
     --nnodes=1 \
     --node_rank=0 \
     --master_addr=127.0.0.1 \
     --master_port=12951 \
-    src/sft/sft_qa_nothink.py \
+    src/sft/sft_qa.py \
     --deepspeed training_scripts/zero3_offload.json \
-    --model_name_or_path ./huggingface/Qwen2-VL-2B-Instruct \
-    --train_data_path ./temporal_grounding_gt/merged-train-new-final.csv \
-    --eval_data_path ./temporal_grounding_gt/merged-val-new-final.csv \
-    --train_video_folder /home/zhuliyun/dataset/msad/MSAD_train \
-    --eval_video_folder /home/zhuliyun/dataset/msad/MSAD_train \
+    --model_name_or_path ./path/to/model/ \
+    --train_data_path /path/to/train.csv \
+    --eval_data_path /path/to/val.csv \
+    --train_video_folder /path/to/train/videos \
+    --eval_video_folder /path/to/val/videos \
     --dataset_name all \
-    --learning_rate 2.0e-5 \
+    --learning_rate 2e-5 \
     --attn_implementation flash_attention_2 \
     --num_train_epochs 1 \
     --packing \

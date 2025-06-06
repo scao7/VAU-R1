@@ -39,7 +39,7 @@ pip install qwen_vl_utils
 
 We construct **VAU-Bench**, a unified benchmark built from MSAD, UCF-Crime, and ECVA, enriched with Chain-of-Thought (CoT) annotations, including: (i) video descriptions, (ii) temporal boundaries, (iii) multiple-choice QA, and (iv) reasoning rationales.
 
-Please download the original video files from [UCF-Crime](https://www.crcv.ucf.edu/projects/real-world/) , [ECVA](https://github.com/Dulpy/ECVA) and [MSAD](https://github.com/Tom-roujiang/MSAD) for our experiments. Our Chain of Thought annotation for these three datasets can be found in ``annotations/`` folder.
+Please download the original video files from [UCF-Crime](https://www.crcv.ucf.edu/projects/real-world/) , [ECVA](https://github.com/Dulpy/ECVA) and [MSAD](https://github.com/Tom-roujiang/MSAD) for our experiments. Our Chain of Thought annotation for these three datasets can be found in ``annotations/`` folder or [link](https://huggingface.co/datasets/7xiang/VAU-Bench) here.
 
 
 

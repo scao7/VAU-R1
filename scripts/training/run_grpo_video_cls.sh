@@ -1,18 +1,12 @@
+
 export WANDB_NAME=$(basename $0)_$(date +"%Y%m%d_%H%M%S")
 export PYTHONPATH=".:$PYTHONPATH"
 OUTDIR=./checkpoints/$WANDB_NAME
 
-# export DEBUG_MODE="true"
+export DEBUG_MODE="true"
 export LOG_PATH="./logs/${WANDB_NAME}.log"
-
 export TOKENIZERS_PARALLELISM=false
-export CUDA_VISIBLE_DEVICES=0,1
 
-# export OMP_NUM_THREADS=1
-# export DISABLE_ADDMM_CUDA_LT=1
-# export TORCH_CUDNN_USE_HEURISTIC_MODE_B=1
-
-OUTDIR=./checkpoints/$WANDB_NAME
 
 torchrun \
     --nproc_per_node=2 \
@@ -20,15 +14,15 @@ torchrun \
     --node_rank=0 \
     --master_addr=127.0.0.1 \
     --master_port=10668 \
-    src/open_r1/grpo_qa.py \
+    src/open_r1/grpo_cls.py \
     --deepspeed training_scripts/zero3_offload.json \
     --output_dir $OUTDIR \
-    --model_name_or_path ../huggingface/Qwen2.5-VL-3B-Instruct-SFT-DES-1474-full-0521 \
-    --train_data_path Annotations/merged-train-new-final.csv \
-    --eval_data_path Annotations/merged-val-new-final.csv \
-    --train_video_folder /home/zhuliyun/dataset/msad/MSAD_train \
-    --eval_video_folder /home/zhuliyun/dataset/msad/MSAD_train \
-    --dataset_name All \
+    --model_name_or_path ./path/to/model/ \
+    --train_data_path /path/to/train.csv \
+    --eval_data_path /path/to/val.csv \
+    --train_video_folder /path/to/train/videos \
+    --eval_video_folder /path/to/val/videos \
+    --dataset_name all \
     --max_prompt_length 1024 \
     --max_completion_length 1024 \
     --num_generations 4 \
@@ -44,6 +38,6 @@ torchrun \
     --run_name $WANDB_NAME \
     --report_to tensorboard \
     --save_steps 100 \
+    --learning_rate 2e-6 \
     --save_total_limit 3 \
     --save_only_model true
-

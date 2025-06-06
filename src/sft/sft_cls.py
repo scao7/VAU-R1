@@ -133,7 +133,7 @@ def load_csv_dataset(train_data_path, eval_data_path, train_video_folder, eval_v
 
         examples = []
         with open(file_path, mode='r', encoding='utf-8') as csv_file:
-            reader = csv.DictReader(csv_file) 
+            reader = csv.DictReader(csv_file)  
 
             for row in reader:
                 # print(row)
@@ -221,7 +221,7 @@ FIXED_QUESTION = "What type of anomaly appears in the video? If no anomaly appea
 
 FIXED_OPTION = "['Abuse', 'Agriculture', 'Arrest', 'Arson', 'Assault', 'Explosion', 'Fighting', 'Fire', 'Food Safety', 'Medical Abnormality', 'Natural Hazard', 'Normal', 'Object_falling', 'People_falling', 'Robbery', 'Shooting', 'Stealing', 'Traffic_accident', 'Vandalism', 'Water_incident']"
 
-QUESTION_TEMPLATE = """Answer the question: "[QUESTION]" according to the content of the video. Select the answer from :[OPTION]. When the user asks a question, you should first carefully reason through the problem internally, and then present the final option. The expected format is: <think> Your detailed reasoning process here </think><answer> Output the corresponding option here </answer> """
+QUESTION_TEMPLATE = """Answer the question: "[QUESTION]" according to the content of the video. Select the answer from :[OPTION]. The expected format is: <answer> Output the corresponding option here </answer> """
 
 
 def convert_example(example):
@@ -252,7 +252,7 @@ def convert_example(example):
             ]
     })
 
-    answer_text = f'<think>{example["reasoning"]["cot"]}</think><answer>{example["solution"]["answer"]}</answer>'
+    answer_text = f'<answer>{example["solution"]["answer"]}</answer>'
     messages.append({
         "role": "assistant",
         "content": answer_text,
@@ -365,15 +365,15 @@ def main(script_args, training_args, model_args):
     ###################
     from peft import LoraConfig, get_peft_model
 
-    # lora_config = LoraConfig(
-    #     task_type="CAUSAL_LM",
-    #     target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
-    #     inference_mode=False,
-    #     r=16,
-    #     lora_alpha=16,
-    #     lora_dropout=0.05,
-    #     bias="none",
-    # )
+    lora_config = LoraConfig(
+        task_type="CAUSAL_LM",
+        target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+        inference_mode=False,
+        r=16,
+        lora_alpha=16,
+        lora_dropout=0.05,
+        bias="none",
+    )
 
     logger.info("*** Initializing model kwargs ***")
     torch_dtype = (
@@ -392,22 +392,17 @@ def main(script_args, training_args, model_args):
         use_sliding_window=True,
     )
     # training_args.model_init_kwargs = model_kwargs
-    from transformers import Qwen2VLForConditionalGeneration, Qwen2_5_VLForConditionalGeneration
-    model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
-        model_args.model_name_or_path, 
-        # torch_dtype=torch.bfloat16,
-        **model_kwargs
-    )
+    from transformers import Qwen2VLForConditionalGeneration
     # model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
     #     model_args.model_name_or_path, 
     #     # torch_dtype=torch.bfloat16,
     #     **model_kwargs
     # )
-    # model = Qwen2VLForConditionalGeneration.from_pretrained(
-    #     model_args.model_name_or_path, 
-    #     # torch_dtype=torch.bfloat16,
-    #     **model_kwargs
-    # )
+    model = Qwen2VLForConditionalGeneration.from_pretrained(
+        model_args.model_name_or_path, 
+        # torch_dtype=torch.bfloat16,
+        **model_kwargs
+    )
     model = get_peft_model(model, lora_config)  
     model.print_trainable_parameters()
 
@@ -425,7 +420,7 @@ def main(script_args, training_args, model_args):
         eval_dataset=dataset["test"] if training_args.eval_strategy != "no" else None,
         processing_class=processor.tokenizer,
         data_collator=collate_fn,
-        peft_config=get_peft_config(model),
+        peft_config=lora_config
     )
 
     ###############

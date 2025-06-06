@@ -17,7 +17,7 @@ export CUDA_VISIBLE_DEVICES=0,1
 OUTDIR=./checkpoints/$WANDB_NAME
 
 torchrun \
-    --nproc_per_node=2 \
+    --nproc_per_node=1 \
     --nnodes=1 \
     --node_rank=0 \
     --master_addr=127.0.0.1 \
@@ -25,11 +25,11 @@ torchrun \
     src/open_r1/grpo_gqa.py \
     --deepspeed training_scripts/zero3_offload.json \
     --output_dir $OUTDIR \
-    --model_name_or_path ../huggingface/Qwen2.5-VL-3B-Instruct \
-    --train_data_path ./Annotations/temporal_glue_train_duration.csv \
-    --eval_data_path ./Annotations/temporal_glue_val_duration.csv \
-    --train_video_folder /home/zhuliyun/dataset/msad/MSAD_train \
-    --eval_video_folder /home/zhuliyun/dataset/msad/MSAD_train \
+    --model_name_or_path ./path/to/model/ \
+    --train_data_path /path/to/train.csv \
+    --eval_data_path /path/to/val.csv \
+    --train_video_folder /path/to/train/videos \
+    --eval_video_folder /path/to/val/videos \
     --dataset_name All \
     --max_prompt_length 1024 \
     --max_completion_length 1024 \

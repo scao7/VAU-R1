@@ -133,19 +133,18 @@ def load_csv_dataset(train_data_path, eval_data_path, train_video_folder, eval_v
 
         examples = []
         with open(file_path, mode='r', encoding='utf-8') as csv_file:
-            reader = csv.DictReader(csv_file) 
+            reader = csv.DictReader(csv_file)  
 
             for row in reader:
                 # print(row)
                 options = []
                 options.extend(["A. " + row['Option 1'], "B. " + row['Option 2'], "C. " + row['Option 3'], "D. " + row['Option 4']])
                 
-                msad_video_folder = "/root/autodl-tmp/dataset/msad"
-                ucf_video_folder = "/root/autodl-tmp/dataset/ucf-crime/all_videos"
-                ecva_video_folder = "/root/autodl-tmp/dataset/ecva"
+                msad_video_folder = "dataset/msad/MSAD_train"
+                ucf_video_folder = "dataset/ucf-crime/all_videos"
+                ecva_video_folder = "dataset/ecva"
 
                 original_name = row['Video Name']
-
                 if 'msad' in original_name.lower():
                     video_folder = msad_video_folder
                 elif 'ucf' in original_name.lower():
@@ -168,8 +167,8 @@ def load_csv_dataset(train_data_path, eval_data_path, train_video_folder, eval_v
                         "question": row['Question'],
                         "options": options
                     },
-                    # "reasoning": {"cot": row['Reasoning']
-                    # },
+                    "reasoning": {"cot": row['Reasoning']
+                    },
                     "solution": {
                         "answer": row['Correct Option']
                     },
@@ -220,7 +219,8 @@ def load_csv_dataset(train_data_path, eval_data_path, train_video_folder, eval_v
 
 processor = None
 
-QUESTION_TEMPLATE = """Answer the question: "[QUESTION]" according to the content of the video. Select the answer from :[OPTION]. When the user asks a question, you should present the final option. The expected format is: <answer> Output the corresponding letter of the option. (A, B, C, or D) </answer>. """
+
+QUESTION_TEMPLATE = """Answer the question: "[QUESTION]" according to the content of the video. Select the answer from :[OPTION]. The expected format is:<answer> Output the corresponding letter of the option. (A, B, C, or D) </answer>. """
 
 def convert_example(example):
     """
@@ -250,10 +250,7 @@ def convert_example(example):
             ]
     })
 
-    # st, ed = example["solution"]
-    # answer_text = f'<think>{example["reasoning"]["cot"]}</think> <answer>{example["solution"]["answer"]}</answer>'
     answer_text = f'<answer>{example["solution"]["answer"]}</answer>'
-    # answer_text = f"<answer>{str(st)} to {str(ed)}</answer>"
     messages.append({
         "role": "assistant",
         "content": answer_text,
@@ -364,17 +361,17 @@ def main(script_args, training_args, model_args):
     ###################
     # Model init kwargs
     ###################
-    from peft import LoraConfig, get_peft_model
+    # from peft import LoraConfig, get_peft_model
 
-    lora_config = LoraConfig(
-        task_type="CAUSAL_LM",
-        target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
-        inference_mode=False,
-        r=16,
-        lora_alpha=16,
-        lora_dropout=0.05,
-        bias="none",
-    )
+    # lora_config = LoraConfig(
+    #     task_type="CAUSAL_LM",
+    #     target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
+    #     inference_mode=False,
+    #     r=16,
+    #     lora_alpha=16,
+    #     lora_dropout=0.05,
+    #     bias="none",
+    # )
 
     logger.info("*** Initializing model kwargs ***")
     torch_dtype = (
@@ -393,17 +390,17 @@ def main(script_args, training_args, model_args):
         use_sliding_window=True,
     )
     # training_args.model_init_kwargs = model_kwargs
-    from transformers import Qwen2_5_VLForConditionalGeneration
-    model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
-        model_args.model_name_or_path, 
-        # torch_dtype=torch.bfloat16,
-        **model_kwargs
-    )
-    # model = Qwen2VLForConditionalGeneration.from_pretrained(
+    from transformers import Qwen2VLForConditionalGeneration
+    # model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
     #     model_args.model_name_or_path, 
     #     # torch_dtype=torch.bfloat16,
     #     **model_kwargs
     # )
+    model = Qwen2VLForConditionalGeneration.from_pretrained(
+        model_args.model_name_or_path, 
+        **model_kwargs,
+        
+    )
     # model = get_peft_model(model, lora_config)  
     # model.print_trainable_parameters()
 
@@ -421,7 +418,7 @@ def main(script_args, training_args, model_args):
         eval_dataset=dataset["test"] if training_args.eval_strategy != "no" else None,
         processing_class=processor.tokenizer,
         data_collator=collate_fn,
-        peft_config=lora_config
+        peft_config=get_peft_config(model_args),
     )
 
     ###############
