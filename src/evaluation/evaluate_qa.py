@@ -9,20 +9,34 @@ def main(args):
     pred_df = pd.read_csv(args.pred_path)
 
     correct_count = 0
+    valid_total = 0
     total = len(gt_df)
+
     for index, row in gt_df.iterrows():
         video_name = str(row["Video Name"])
         correct_option = row["Correct Option"]
         pred_row = pred_df[pred_df["Video Name"] == video_name]
-        pred = pred_row["QA answer"].values[0] if not pred_row.empty else []
-        correct_count += model_answer.lower() == correct_option.lower()
+        
+        if not pred_row.empty and pd.notna(pred_row["QA answer"].values[0]):
+            pred = pred_row["QA answer"].values[0]
+            valid_total += 1
+            correct_count += str(pred).lower() == str(correct_option).lower()
 
-    final_accuracy = (correct_count / total) * 100
-
-    with open(save_path, "w", encoding="utf-8") as f:
+    if valid_total == 0:
+        final_accuracy = 0.0
+    else:
+        final_accuracy = (correct_count / valid_total) * 100
+    
+    save_dir = os.path.dirname(args.save_path)
+    if save_dir and not os.path.exists(save_dir):
+        os.makedirs(save_dir, exist_ok=True)
+    
+    with open(args.save_path, "w", encoding="utf-8") as f: 
         f.write(f"Total Questions: {total}\n")
-        f.write(f"Accuracy: {accuracy:.2f}%\n")
-    print(f"Evaluation results saved to {self.save_path}\n", "-"*40, "\n")
+        f.write(f"Valid Predictions: {valid_total}\n")  # check valid predictions
+        f.write(f"Accuracy (based on valid predictions): {final_accuracy:.2f}%\n")
+    print(f"Evaluation results saved to {args.save_path}\n", "-"*40, "\n")
+
 
 
 if __name__ == "__main__":
@@ -33,6 +47,6 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if args.save_path is None:
-        save_path = args.pred_path.replace(".csv", "_eval.txt")
-    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+        args.save_path = args.pred_path.replace(".csv", "_eval.txt")
+    os.makedirs(os.path.dirname(args.save_path), exist_ok=True)
     main(args)
