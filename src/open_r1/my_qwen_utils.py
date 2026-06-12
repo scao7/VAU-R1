@@ -241,6 +241,7 @@ def _read_video_decord(
     """
     import decord
     video_path = ele["video"]
+    print(f"decord reading video from {video_path}")
     st = time.time()
 
     if 's3://' in video_path:
@@ -265,7 +266,8 @@ def _read_video_decord(
     sample_fps = nframes / max(total_frames, 1e-6) * video_fps
 
     vr.seek(0)
-
+    print(f"decord read video done, time={time.time() - st:.3f}s")
+    print(video.shape, video.dtype, video.min(), video.max())
     if byteio != None:
         byteio.close()
     return video, sample_fps
@@ -296,11 +298,13 @@ def fetch_video(ele: dict, image_factor: int = IMAGE_FACTOR, return_video_sample
         video_reader_backend = get_video_reader_backend()
         try:
             video, sample_fps = VIDEO_READER_BACKENDS[video_reader_backend](ele, client=client)
+            print(f"fetch_video: use {video_reader_backend} to read video.","fps:", sample_fps)
         except Exception as e:
             logger.warning(f"video_reader_backend {video_reader_backend} error, use torchvision as default, msg: {e}")
             video, sample_fps = VIDEO_READER_BACKENDS["torchvision"](ele, client=client)
 
         nframes, _, height, width = video.shape
+        print("nframes, height, width:", nframes, height, width)
         min_pixels = ele.get("min_pixels", VIDEO_MIN_PIXELS)
         total_pixels = ele.get("total_pixels", VIDEO_TOTAL_PIXELS)
         max_pixels = max(min(VIDEO_MAX_PIXELS, total_pixels / nframes * FRAME_FACTOR), int(min_pixels * 1.05))
@@ -329,6 +333,7 @@ def fetch_video(ele: dict, image_factor: int = IMAGE_FACTOR, return_video_sample
             antialias=True,
         ).float()
         if return_video_sample_fps:
+            print("return video fps:", return_video_sample_fps)
             return video, sample_fps
         return video
     else:

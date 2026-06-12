@@ -83,31 +83,26 @@ def is_valid_two_d_list_format(s):
     if not re.match(pattern, s):
         return False
     try:
-        # 尝试将字符串转换为 Python 对象
         lst = ast.literal_eval(s)
-        # 检查对象是否为列表
         if not isinstance(lst, list):
             return False
-        # 检查列表中的每个元素是否为元组
         for item in lst:
             if not isinstance(item, tuple):
                 return False
-            # 检查元组是否包含两个元素
             if len(item) != 2:
                 return False
-            # 检查元组中的元素是否为数字
             for num in item:
                 if not isinstance(num, (int, float)):
                     return False
-            if item[0] > item[1]: # 保证符合时序区间
+            if item[0] > item[1]:
                 return False
         return True
     except:
         return False
         
 
-def answer_reward(completions, solution, **kwargs): # Modified reward function name and arguments
-    """Reward function that calculates IoU between predicted and ground truth timestamps."""
+def answer_reward(completions, solution, **kwargs):
+    """Reward function that checks multiple-choice correctness via <answer>...</answer>."""
 
     def extract_characters_regex(s):
         s = s.strip()
@@ -132,24 +127,17 @@ def answer_reward(completions, solution, **kwargs): # Modified reward function n
         return matches[0]
     
     rewards = []
-
-    for content, sol in zip(completions, solution): 
+    for content, sol in zip(completions, solution):
         reward = 0.0
-        
         pattern_answer = r'<answer>(.*?)</answer>'
-
-        # 使用 search 方法查找首个匹配项
         match_answer = re.search(pattern_answer, content, re.DOTALL)
-
         if match_answer:
-            # 获取捕获组中的内容
             answer = match_answer.group(1)
             if extract_characters_regex(answer) == extract_characters_regex(sol['answer']):
                 reward = 1.0
-
         rewards.append(reward)
-
     return rewards
+
 
 def format_reward(completions, **kwargs):
     """Reward function that checks if the completion has <think> and <answer> correctly."""
@@ -158,10 +146,7 @@ def format_reward(completions, **kwargs):
 
     reward_list = []
     for i, match in enumerate(matches):
-        if match:
-            r = 1.0
-        else:
-            r = 0.0
+        r = 1.0 if match else 0.0
         reward_list.append(r)
     return reward_list
 
@@ -171,23 +156,8 @@ reward_funcs_registry = {
     "format": format_reward,
 }
 
-# SYSTEM_PROMPT = (
-#     "You are an advanced anomaly detector assigned to analyze a video. A conversation between User and Assistant. The user asks a question, and the Assistant solves it. The assistant "
-#     "first thinks about the reasoning process in the mind and then provides the user with the answer. The reasoning "
-#     "process and answer are enclosed within <think> </think> and <answer> </answer> tags, respectively, i.e., "
-#     "<think> reasoning process here </think><answer> answer here </answer>"
-# )
 
-# SYSTEM_PROMPT = (
-#     "You are an advanced anomaly detection assistant assigned to analyze videos through a structured conversation. "
-#     "When the user asks a question, you should first carefully reason through the problem internally, and then present the final answer. "
-#     "Your reasoning process must be enclosed within <think> </think> tags, and your final answer must be enclosed within <answer> </answer> tags. "
-#     "The expected format is: <think> your detailed reasoning process here </think><answer> your final answer here </answer>. "
-#     "Ensure that both the reasoning and the answer are clear, coherent, and well-structured."
-# )
-
-
-def load_csv_dataset(train_data_path, eval_data_path, train_video_folder, eval_video_folder):#, preprocessed_data_path=None): # Modified to accept preprocessed_data_path
+def load_csv_dataset(train_data_path, eval_data_path, train_video_folder, eval_video_folder):
     def create_dataset_from_csv(file_path, split_name):
         if split_name == "train":
             video_folder = train_video_folder
@@ -201,13 +171,16 @@ def load_csv_dataset(train_data_path, eval_data_path, train_video_folder, eval_v
             reader = csv.DictReader(csv_file)
 
             for row in reader:
-                # print(row)
-                options = []
-                options.extend(["A. " + row['Option 1'], "B. " + row['Option 2'], "C. " + row['Option 3'], "D. " + row['Option 4']])
+                options = [
+                    "A. " + row['Option 1'],
+                    "B. " + row['Option 2'],
+                    "C. " + row['Option 3'],
+                    "D. " + row['Option 4'],
+                ]
                 
-                msad_video_folder = "/root/autodl-tmp/dataset/msad"
-                ucf_video_folder = "/root/autodl-tmp/dataset/ucf-crime/all_videos"
-                ecva_video_folder = "/root/autodl-tmp/dataset/ecva"
+                msad_video_folder = "/home/scao/myproject/VAU-R1/organized_data/msad"
+                ucf_video_folder = "/home/scao/myproject/VAU-R1/organized_data/ucf"
+                ecva_video_folder = "/home/scao/myproject/VAU-R1/organized_data/ecva"
 
                 original_name = row['Video Name']
 
@@ -233,67 +206,79 @@ def load_csv_dataset(train_data_path, eval_data_path, train_video_folder, eval_v
                     "solution": {
                         "answer": row['Correct Option'],
                     },
-                    "video_path": video_path,  
+                    "video_path": video_path,
                 }
-
                 examples.append(example)
 
         random.shuffle(examples)
         print(len(examples))
         print(examples[:1])
+
         dataset = Dataset.from_list(examples)
-
-
+        # 关键：强制以 Python 对象返回，避免 pyarrow 自动包装导致的 batch 组装问题
+        dataset = dataset.with_format("python")
         dataset.client = None
-        def __getitem__(self, idx): # Define getitem within the scope where dataset is available
-            retry_count = 0
-            example = dataset[idx]
-            data_to_return = {k: v for k, v in example.items()} # Create a copy to avoid modifying original dataset
 
-            try:
-                messages = [{"role": "user", "content": [{"type": "video", "video": example["video_path"][0], "total_pixels": 3584 * 28 * 28, "min_pixels": 16 * 28 * 28,},]}]
-                image_inputs, video_inputs, video_kwargs = process_vision_info([messages], return_video_kwargs=True, client=self.client)
-                fps_inputs = video_kwargs['fps']
-                # # data_to_return["image_inputs"] = [torch.load(os.path.join(example["video_path"][0], "image_inputs.pt"))]
-                data_to_return["video_inputs"] = [video_inputs]
-                # with open(os.path.join(example["video_path"][0], "video_kwargs.json"), 'r') as f:
-                data_to_return["video_kwargs"] = [video_kwargs]
-            except Exception as e:
-                print(f"Warning: Error loading preprocessed data from {example['video_path'][0]}, falling back to video_path. Error: {e}")
-                retry_count += 1
-                MAX_RETRY = 20
-                if retry_count > MAX_RETRY:
-                    raise RuntimeError(f"Tried {MAX_RETRY} times but still failed.")
-                print(idx)
-                idx = idx + 1
-                return self.__getitem__(idx)
+        def __getitem__(self, idx):
+            if isinstance(idx, list):
+                single_items = [self.__getitem__(i) for i in idx]
+                keys = single_items[0].keys()
+                batched = {k: [it[k] for it in single_items] for k in keys}
+                return batched
 
-            return data_to_return
+            retry = 0
+            MAX_RETRY = 20
+            n = len(examples)
 
-        dataset.__getitem__ = __getitem__.__get__(dataset, Dataset) # Bind getitem to the dataset
+            while True:
+                ex = examples[idx]  # 用闭包中的 examples，避免 self 递归
+                out = {k: v for k, v in ex.items()}
+                try:
+                    msgs = [{
+                        "role": "user",
+                        "content": [{
+                            "type": "video",
+                            "video": ex["video_path"],     # 传入字符串路径，不加 [0]
+                            "total_pixels": 3584 * 28 * 28,
+                            "min_pixels": 16 * 28 * 28,
+                        }],
+                    }]
+                    print("ex[video_path]: ", ex["video_path"])
+                    _, video_inputs, video_kwargs = process_vision_info(
+                        [msgs], return_video_kwargs=True, client=self.client
+                    )
+                    # 返回扁平对象，避免多套一层 list
+                    out["video_inputs"] = video_inputs
+                    out["video_kwargs"] = video_kwargs
+                    return out
+                except Exception as e:
+                    print(
+                        f"Warning: Error loading video from {ex['video_path']}, skipping. Error: {e}"
+                    )
+                    retry += 1
+                    if retry > MAX_RETRY:
+                        raise RuntimeError(f"Tried {MAX_RETRY} times but still failed at idx={idx}.")
+                    idx = (idx + 1) % n
 
+        dataset.__getitem__ = __getitem__.__get__(dataset, Dataset)
         return dataset
+
     train_dataset = create_dataset_from_csv(train_data_path, "train")
     eval_dataset = create_dataset_from_csv(eval_data_path, "eval")
     return DatasetDict({"train": train_dataset, "eval": eval_dataset})
+
 
 def main(script_args, training_args, model_args):
     # Get reward functions
     reward_funcs = [reward_funcs_registry[func] for func in script_args.reward_funcs]
 
-    # # Load the dataset
-    # dataset = load_dataset(script_args.dataset_name, name=script_args.dataset_config)
-    # Load the dataset, now handles both raw and preprocessed data
+    # Load the dataset
     dataset = load_csv_dataset(
         script_args.train_data_path,
         script_args.eval_data_path,
         script_args.train_video_folder,
         script_args.eval_video_folder
-        # script_args.preprocessed_data_path # Pass preprocessed_data_path
     )
-
-    # import pdb; pdb.set_trace()
-
 
     if not training_args.use_vllm:
         trainer_cls = Qwen2VLGRPOTrainer
@@ -302,18 +287,6 @@ def main(script_args, training_args, model_args):
     
     print("using: ", trainer_cls)
 
-    # from peft import LoraConfig, get_peft_model
-
-    # lora_config = LoraConfig(
-    #     task_type="CAUSAL_LM",
-    #     target_modules=["q_proj", "k_proj", "v_proj", "o_proj", "gate_proj", "up_proj", "down_proj"],
-    #     inference_mode=False,
-    #     r=16,
-    #     lora_alpha=16,
-    #     lora_dropout=0.05,
-    #     bias="none",
-    # )
-
     # Initialize the GRPO trainer
     trainer = trainer_cls(
         model=model_args.model_name_or_path,
@@ -321,20 +294,20 @@ def main(script_args, training_args, model_args):
         args=training_args,
         train_dataset=dataset[script_args.dataset_train_split],
         eval_dataset=dataset[script_args.dataset_test_split] if training_args.eval_strategy != "no" else None,
-        # peft_config=lora_config,
         peft_config=get_peft_config(model_args),
         attn_implementation=model_args.attn_implementation,
         max_pixels=script_args.max_pixels,
         min_pixels=script_args.min_pixels,
     )
 
-    # Train and push the model to the Hub 
+    # Train
     trainer.train()
 
     # Save and push to hub
     trainer.save_model(training_args.output_dir)
     if training_args.push_to_hub:
         trainer.push_to_hub(dataset_name=script_args.dataset_name)
+
 
 if __name__ == "__main__":
     parser = TrlParser((GRPOScriptArguments, GRPOConfig, ModelConfig))
